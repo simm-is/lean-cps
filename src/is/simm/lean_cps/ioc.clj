@@ -263,7 +263,7 @@
       :else (throw (ex-info (str "Unsupported form [" form "]")
                             {:form form})))))
 
-(defmacro coroutine
+(defmacro cps
   "Defines a function that takes a successful and exceptional continuation,
    and runs the body, suspending execution whenever any of the terms is
    encountered, and eventually calling one of the continuations with the

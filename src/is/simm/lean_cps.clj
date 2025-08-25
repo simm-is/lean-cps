@@ -5,6 +5,6 @@
 
 ;; TODO decide on public API
 
-(def coroutine ioc/coroutine)
+(def cps ioc/cps)
 
 (def run runtime/run)

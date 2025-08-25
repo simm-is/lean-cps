@@ -1,6 +1,6 @@
 (ns is.simm.lean-cps.async
   (:require [is.simm.lean-cps.runtime :as runtime])
-  #?(:clj (:require [is.simm.lean-cps.ioc :refer [coroutine]])))
+  #?(:clj (:require [is.simm.lean-cps.ioc :refer [cps]])))
 
 ;; TODO maybe this should be a macro that can emit more information about its code block
 (defn await
@@ -26,14 +26,14 @@
       `(letfn [(safe-r# [v#] (try (~r v#) (catch ~all-ex t# (~e t#))))]
          (is.simm.lean-cps.runtime/->thunk (fn [] (~(first args) safe-r# ~e)))))))
 
-(def ^:no-doc terminators
+(def ^:no-doc interceptors
   {`await `await-handler})
 
 #?(:clj
    (defmacro async
      "Creates an asynchronous coroutine."
      [& body]
-     `(coroutine ~terminators ~@body)))
+     `(cps ~interceptors ~@body)))
 
 ;; reexport runtime for convenience
 
