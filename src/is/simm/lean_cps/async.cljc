@@ -1,6 +1,8 @@
 (ns is.simm.lean-cps.async
+  (:refer-clojure :exclude [await])
   (:require [is.simm.lean-cps.runtime :as runtime])
-  #?(:clj (:require [is.simm.lean-cps.ioc :refer [cps]])))
+  #?(:clj (:require [is.simm.lean-cps.ioc :refer [cps]]))
+  #?(:cljs (:require-macros [is.simm.lean-cps.async :refer [async doseq-async dotimes-async]])))
 
 ;; TODO maybe this should be a macro that can emit more information about its code block
 (defn await
@@ -21,9 +23,21 @@
 (defn await-handler
   "Provides effect handler code for await."
   [env r e]
-  (let [all-ex (if (:js-globals env) :default `Throwable)]
-    (fn [args]
-      `(letfn [(safe-r# [v#] (try (~r v#) (catch ~all-ex t# (~e t#))))]
+  (fn [args]
+    (if (:js-globals env)
+      ;; ClojureScript: Simple version with error handling but no trampolining
+      `(letfn [(safe-r# [v#] (try (~r v#) (catch :default t# (~e t#))))]
+         (is.simm.lean-cps.runtime/->thunk (fn [] (~(first args) safe-r# ~e))))
+      ;; Clojure JVM: Complex version with smart-trampolining for threading
+      `(letfn [(safe-r# [v#]
+                 (try
+                   (let [result# (~r v#)]
+                     (if (instance? is.simm.lean_cps.runtime.Thunk result#)
+                       ;; If continuation returns a thunk, trampoline it
+                       (is.simm.lean-cps.runtime/smart-trampoline
+                        (fn [] result#))
+                       result#))
+                   (catch Throwable t# (~e t#))))]
          (is.simm.lean-cps.runtime/->thunk (fn [] (~(first args) safe-r# ~e)))))))
 
 (def ^:no-doc interceptors
@@ -35,7 +49,7 @@
      [& body]
      `(cps ~interceptors ~@body)))
 
-;; reexport runtime for convenience
+;; re-export runtime for convenience
 
 (def run runtime/run)
 

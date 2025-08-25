@@ -1,8 +1,17 @@
 (ns is.simm.lean-cps.ioc
   "Inversion of control, i.e. transformation into continuation-passing style (CPS)."
   (:require [riddley.walk :refer [macroexpand-all]]
-            [cljs.analyzer :refer [resolve-var resolve-macro-var]]))
+            #_[cljs.analyzer :refer [resolve-var resolve-macro-var]]))
 
+(defn resolve-var-cljs [env sym]
+  ;; in cljs compilation
+  (require 'cljs.analyzer)
+  ((resolve 'cljs.analyzer/resolve-var) env sym))
+
+(defn resolve-macro-var-cljs [env sym]
+  ;; in cljs compilation  
+  (require 'cljs.analyzer)
+  ((resolve 'cljs.analyzer/resolve-macro-var) env sym))
 
 (defn var-name [env sym]
   (when (symbol? sym)
@@ -10,7 +19,7 @@
     (when-not (special-symbol? sym)
       (if (:js-globals env)
         ;; In Clojurescript use cljs.analyzer
-        (:name (resolve-var env sym))
+        (:name (resolve-var-cljs env sym))
         ;; In Clojure, use the existing resolution logic
         (when-let [v (resolve env sym)]
           (let [nm (:name (meta v))
@@ -75,13 +84,13 @@
 
       (if (:js-globals env)
         ;; use cljs.analyzer to find macro var info
-        (:macro (resolve-macro-var env head))
+        (:macro (resolve-macro-var-cljs env head))
         ;; use normal Clojure resolve
         (let [resolved (when (symbol? head) (resolve env head))]
           (and resolved (.isMacro resolved))))
       (recur ctx
              (apply (if (:js-globals env)
-                      (resolve (:name (resolve-var env head)))
+                      (resolve (:name (resolve-macro-var-cljs env head)))
                       (resolve env head))
                     form env tail))
 
@@ -244,7 +253,7 @@
       ;; Invoke termination handler, e.g. do-await
       (contains? interceptors (var-name env head))
       (let [handler (resolve (interceptors (var-name env head)))]
-        (resolve-sequentially ctx (rest form) (handler env e r)))
+        (resolve-sequentially ctx (rest form) (handler env r e)))
 
       ;; TODO this should actually be last, vector is seq?
       (seq? form)

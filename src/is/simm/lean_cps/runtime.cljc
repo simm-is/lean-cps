@@ -1,4 +1,5 @@
-(ns is.simm.lean-cps.runtime)
+(ns is.simm.lean-cps.runtime
+  (:refer-clojure :exclude [bound-fn]))
 
 (defn ^:no-doc bound-fn
   [f]
@@ -11,6 +12,7 @@
              (apply f args)
              (finally
                (clojure.lang.Var/resetThreadBindingFrame call-site-frame))))))
+     ;; no dynamic binding support for async code in cljs (same for core.async)
      :cljs identity))
 
 (deftype Thunk [f])
@@ -33,5 +35,5 @@
   [f resolve raise]
   (try
     (smart-trampoline f resolve raise)
-    (catch :default e
+    (catch #?(:clj Throwable :cljs :default) e
       (raise e))))

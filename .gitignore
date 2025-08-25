@@ -28,3 +28,8 @@
 /checkouts
 /classes
 /target
+
+.shadow-cljs
+package-lock.json
+repl-mcp.log
+node_modules/
