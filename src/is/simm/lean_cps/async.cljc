@@ -49,7 +49,7 @@
      [& body]
      `(cps ~interceptors ~@body)))
 
-;; re-export runtime for convenience
+;; Re-export runtime for convenience
 
 (def run runtime/run)
 
