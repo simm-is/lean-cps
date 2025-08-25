@@ -1,4 +1,5 @@
 (ns is.simm.lean-cps.async
+  (:require [is.simm.lean-cps.runtime :as runtime])
   #?(:clj (:require [is.simm.lean-cps.ioc :refer [coroutine]])))
 
 ;; TODO maybe this should be a macro that can emit more information about its code block
@@ -33,6 +34,10 @@
      "Creates an asynchronous coroutine."
      [& body]
      `(coroutine ~terminators ~@body)))
+
+;; reexport runtime for convenience
+
+(def run runtime/run)
 
 ;; experimental macros
 

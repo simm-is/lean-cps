@@ -7,7 +7,7 @@ A lightweight Clojure/ClojureScript library for continuation-passing style (CPS)
 - **Coroutines**: Transform regular Clojure code into continuation-passing style
 - **Cross-platform**: Works with both Clojure and ClojureScript
 - **Lightweight**: Minimal dependencies and overhead
-- **Inversion of Control**: Automatic CPS transformation with terminator support
+- **Inversion of Control**: Automatic CPS transformation with interceptor support
 - **Async/Await**: Write asynchronous code that looks synchronous
 
 ## Usage
@@ -35,13 +35,13 @@ A lightweight Clojure/ClojureScript library for continuation-passing style (CPS)
 ```clojure
 (require '[is.simm.lean-cps :refer [coroutine run]])
 
-;; Define custom terminators
-(def my-terminators
+;; Define custom interceptors
+(def my-interceptors
   {`my-yield `handle-yield})
 
 ;; Create a coroutine
 (def my-coro
-  (coroutine my-terminators
+  (coroutine my-interceptors
     (let [x (my-yield 42)]
       (+ x 10))))
 
