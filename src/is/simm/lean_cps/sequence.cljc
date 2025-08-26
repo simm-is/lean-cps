@@ -1,7 +1,6 @@
 (ns is.simm.lean-cps.sequence
   (:refer-clojure :exclude [first rest sequence transduce into])
-  (:require [is.simm.lean-cps.async :refer [async await]]
-            [is.simm.lean-cps.runtime :as runtime]))
+  (:require [is.simm.lean-cps.async :refer [async await]]))
 
 (defprotocol IAsyncSeq
   (-afirst [this] "Returns async expression yielding first element")
