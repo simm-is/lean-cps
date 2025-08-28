@@ -1,6 +1,6 @@
 # lean-cps
 
-A lightweight Clojure/ClojureScript library for continuation-passing style (CPS) transformations derived from [await-cps](https://github.com/mszajna/await-cps). The CPS transform rewrites the code in a similar way to manual callback implementations by invoking the callback (continuation) only where necessary (at a teriminator). This approach leaves the remaining code synchronous and therefore retains readability compared to the transformations in core.async or cloroutine. The transformed code is also generally faster, both in sychronous sections, and when dispatching into callbacks. It does not provide any processing or scheduling framework, and instead provides a safe trampolining execution. This avoids scheduling overhead and only hits the JS event loop if the effect handler schedules it. 
+A lightweight Clojure/ClojureScript library for continuation-passing style (CPS) transformations derived from [await-cps](https://github.com/mszajna/await-cps). The CPS transform rewrites the code in a similar way to manual callback implementations by invoking the callback (continuation) only where necessary (at an interceptor). This approach leaves the remaining code synchronous and therefore retains readability compared to the transformations in [core.async](https://github.com/clojure/core.async) or [cloroutine](https://github.com/leonoel/cloroutine). The transformed code is also generally faster, both in sychronous sections, and when dispatching into callbacks. It does not provide any processing or scheduling framework, and instead provides a safe trampolining execution. This avoids scheduling overhead and only hits the a threadpool dispatcher or a JS event loop if the effect handler schedules it. 
 
 ## Features
 
@@ -33,20 +33,20 @@ A lightweight Clojure/ClojureScript library for continuation-passing style (CPS)
 ### Custom Coroutines
 
 ```clojure
-(require '[is.simm.lean-cps :refer [coroutine run]])
+(require '[is.simm.lean-cps :refer [cps run]])
 
 ;; Define custom interceptors
 (def my-interceptors
   {`my-yield `handle-yield})
 
 ;; Create a coroutine
-(def my-coro
-  (coroutine my-interceptors
+(def my-cps
+  (cps my-interceptors
     (let [x (my-yield 42)]
       (+ x 10))))
 
 ;; Run the coroutine
-(run my-coro
+(run my-cps
   (fn [result] (println "Success:" result))
   (fn [error] (println "Error:" error)))
 ```
