@@ -1,6 +1,8 @@
 (ns is.simm.lean-cps.async-test
   (:require [cljs.test :as test :refer-macros [deftest testing is]]
-            [is.simm.lean-cps.async :refer [await run]])
+            [is.simm.lean-cps.async :refer [await run]]
+            [is.simm.lean-cps.runtime :refer [smart-trampoline]]
+            [clojure.pprint :refer [pprint]])
   (:require-macros [is.simm.lean-cps.async :refer [async doseq-async dotimes-async]]))
 
 ;; Test helpers
@@ -14,7 +16,13 @@
   "Simulates an async operation using callbacks"
   [ms value]
   (fn [resolve reject]
-    (js/setTimeout #(resolve value) ms)))
+    (js/setTimeout 
+     (fn []
+       (try
+         (smart-trampoline resolve value)
+         (catch :default e 
+           (reject e)))) 
+     ms)))
 
 (defn failing-async
   "An async operation that always fails"
