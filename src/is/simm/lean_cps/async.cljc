@@ -24,21 +24,15 @@
   "Provides effect handler code for await."
   [env r e]
   (fn [args]
-    (if (:js-globals env)
-      ;; ClojureScript: Simple version with error handling but no trampolining
-      `(letfn [(safe-r# [v#] (try (~r v#) (catch :default t# (~e t#))))]
-         (is.simm.lean-cps.runtime/->thunk (fn [] (~(first args) safe-r# ~e))))
-      ;; Clojure JVM: Complex version with smart-trampolining for threading
-      `(letfn [(safe-r# [v#]
-                 (try
-                   (let [result# (~r v#)]
-                     (if (instance? is.simm.lean_cps.runtime.Thunk result#)
-                       ;; If continuation returns a thunk, trampoline it
-                       (is.simm.lean-cps.runtime/smart-trampoline
-                        (fn [] result#))
-                       result#))
-                   (catch Throwable t# (~e t#))))]
-         (is.simm.lean-cps.runtime/->thunk (fn [] (~(first args) safe-r# ~e)))))))
+    `(letfn [(safe-r# [v#]
+               (try
+                 (loop [result# (~r v#)]
+                   (if (instance? is.simm.lean_cps.runtime.Thunk result#)
+                     ;; If continuation returns a thunk, trampoline it
+                     (recur ((.-f ^is.simm.lean_cps.runtime.Thunk result#)))
+                     result#))
+                 (catch ~(if (:js-globals env) :default `Throwable) t# (~e t#))))]
+       (is.simm.lean-cps.runtime/->thunk (fn [] (~(first args) safe-r# ~e))))))
 
 (def ^:no-doc interceptors
   {`await `await-handler})
