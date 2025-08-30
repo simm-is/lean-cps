@@ -24,6 +24,7 @@
   "Provides effect handler code for await."
   [env r e]
   (fn [args]
+    (assert (= (count args) 1) (str "Expected 1 argument, got " args))
     `(letfn [(safe-r# [v#]
                (try
                  (loop [result# (~r v#)]

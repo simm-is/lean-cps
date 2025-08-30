@@ -119,9 +119,9 @@
    The transducer is applied lazily as elements are consumed.
 
    Example:
-   (async-sequence (map inc) async-seq)
-   (async-sequence (filter even?) async-seq)
-   (async-sequence (partition-all 3) async-seq)"
+   (sequence (map inc) async-seq)
+   (sequence (filter even?) async-seq)
+   (sequence (partition-all 3) async-seq)"
   [xform source-seq]
   (when source-seq
     (let [;; Shared state

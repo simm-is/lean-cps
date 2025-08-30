@@ -12,7 +12,7 @@
   {:target :node-test
    :output-to "target/test.js"
    :autorun true}
-  
+   
   :browser-test
   {:target :browser-test
    :test-dir "target/browser-test"
@@ -22,4 +22,4 @@
   :node-repl
   {:target :node-script
    :output-to "target/node-repl.js"
-   :main is.simm.lean-cps.async-test/init}}}
+   :main is.simm.lean-cps.sequence-test/init}}}
