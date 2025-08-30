@@ -16,14 +16,9 @@ The transformed code is also generally faster, both in synchronous sections and 
 
 ## Installation
 
-### Leiningen/Boot
-```clojure
-[is.simm/lean-cps "0.1.0"] ; Check Clojars for latest version
-```
-
 ### deps.edn
 ```clojure
-{is.simm/lean-cps {:mvn/version "0.1.0"}} ; Check Clojars for latest version
+{is.simm/lean-cps {:git/url "https://github.com/simm-is/lean-cps" :git/sha "LATEST"}} ; Check github for latest commit
 ```
 
 ## Usage
