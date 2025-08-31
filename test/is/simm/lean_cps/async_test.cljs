@@ -67,6 +67,23 @@
           (is false (str "Should not fail: " err))
           (done))))))
 
+(deftest test-cond-expansion
+  (test/async done
+    (let [result (atom [])]
+      (run
+       (async
+        (cond
+          (await (async-cb-delay 10 false)) (swap! result conj :false-branch)
+          (and false true) (reset! result (await (async-cb-delay 10 false)))
+          (await (async-cb-delay 10 false)) (swap! result conj :false-branch)
+          :else (swap! result conj :true-branch)))
+       (fn [_]
+         (is (= [:true-branch] @result))
+         (done))
+       (fn [err]
+         (is false (str "Should not fail: " err))
+         (done))))))
+
 (deftest test-await-in-let-binding
   (test/async done
     (let [result (atom nil)]
