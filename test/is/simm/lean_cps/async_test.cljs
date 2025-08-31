@@ -73,12 +73,12 @@
       (run
        (async
         (cond
-          (await (async-cb-delay 10 false)) (swap! result conj :false-branch)
-          (and false true) (reset! result (await (async-cb-delay 10 false)))
-          (await (async-cb-delay 10 false)) (swap! result conj :false-branch)
-          :else (swap! result conj :true-branch)))
+          (await (async-cb-delay 10 true)) (swap! result conj :first-branch)
+          (and false true) (reset! result (await (async-cb-delay 10 :second-branch)))
+          (await (async-cb-delay 10 false)) (swap! result conj :third-branch)
+          :else (swap! result conj :fourth-branch)))
        (fn [_]
-         (is (= [:true-branch] @result))
+         (is (= [:first-branch] @result))
          (done))
        (fn [err]
          (is false (str "Should not fail: " err))
