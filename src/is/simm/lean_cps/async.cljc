@@ -26,7 +26,7 @@
   (fn [args]
     (assert (= (count args) 1) (str "Expected 1 argument, got " args))
     `(letfn [(safe-r# [v#]
-               (try
+               (try 
                  (loop [result# (~r v#)]
                    (if (instance? is.simm.lean_cps.runtime.Thunk result#)
                      ;; If continuation returns a thunk, trampoline it
@@ -42,7 +42,22 @@
    (defmacro async
      "Creates an asynchronous coroutine."
      [& body]
-     `(cps ~interceptors ~@body)))
+     (let [ctx {:interceptors interceptors
+                :env &env}
+           has-await? (try
+                        (has-interceptors? `(do ~@body) ctx)
+                        (catch Exception e
+                          (throw e)))]
+       (if has-await?
+         ;; Slow path: CPS function that may suspend
+         `(cps ~interceptors ~@body)
+         ;; Fast path: synchronous callback invocation
+         `(fn [r# e#]
+            (try
+              (let [result# (do ~@body)]
+                (r# result#))
+              (catch ~(if (:js-globals &env) :default `Throwable) t#
+                (e# t#))))))))
 
 ;; Re-export runtime for convenience
 
