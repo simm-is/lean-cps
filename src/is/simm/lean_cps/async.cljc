@@ -4,7 +4,6 @@
   #?(:clj (:require [is.simm.lean-cps.ioc :refer [cps has-interceptors?]]))
   #?(:cljs (:require-macros [is.simm.lean-cps.async :refer [async doseq-async dotimes-async]])))
 
-;; TODO maybe this should be a macro that can emit more information about its code block
 (defn await
   "Awaits the asynchronous execution of continuation-passing style function
    async-cb, applying it to args and two extra callback functions: resolve and
@@ -26,14 +25,14 @@
   (fn [args]
     (assert (= (count args) 1) (str "Expected 1 argument, got " args))
     `(letfn [(safe-r# [v#]
-               (try 
+               (try
                  (loop [result# (~r v#)]
                    (if (instance? is.simm.lean_cps.runtime.Thunk result#)
                      ;; If continuation returns a thunk, trampoline it
                      (recur ((.-f ^is.simm.lean_cps.runtime.Thunk result#)))
                      result#))
                  (catch ~(if (:js-globals env) :default `Throwable) t# (~e t#))))]
-       (is.simm.lean-cps.runtime/->thunk (fn [] (~(first args) safe-r# ~e))))))
+       (~(first args) safe-r# ~e))))
 
 (def ^:no-doc interceptors
   {`await `await-handler})
@@ -42,26 +41,7 @@
    (defmacro async
      "Creates an asynchronous coroutine."
      [& body]
-     (let [ctx {:interceptors interceptors
-                :env &env}
-           has-await? (try
-                        (has-interceptors? `(do ~@body) ctx)
-                        (catch Exception e
-                          (throw e)))]
-       (if has-await?
-         ;; Slow path: CPS function that may suspend
-         `(cps ~interceptors ~@body)
-         ;; Fast path: synchronous callback invocation
-         `(fn [r# e#]
-            (try
-              (let [result# (do ~@body)]
-                (r# result#))
-              (catch ~(if (:js-globals &env) :default `Throwable) t#
-                (e# t#))))))))
-
-;; Re-export runtime for convenience
-
-(def run runtime/run)
+     `(cps ~interceptors ~@body))) 
 
 ;; experimental macros
 

@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [first rest sequence transduce into])
   (:require [clojure.test :refer [deftest testing is run-tests]]
             [is.simm.lean-cps.sequence :as seq]
-            [is.simm.lean-cps.async :refer [await run async]]))
+            [is.simm.lean-cps.async :refer [await async]]))
 
 ;; Test helpers
 (defn future-delay
@@ -21,9 +21,9 @@
   [async-fn timeout-ms]
   (let [result (promise)
         error (promise)]
-    (run async-fn
-         #(deliver result %)
-         #(deliver error %))
+    (async-fn
+     #(deliver result %)
+     #(deliver error %))
     (let [res (deref (future
                        (try
                          (or (deref result timeout-ms nil)

@@ -36,9 +36,9 @@ The transformed code is also generally faster, both in synchronous sections and 
       (merge user-data profile))))
 
 ;; Run the async function with callbacks
-(run fetch-user
-  (fn [result] (println "Success:" result))
-  (fn [error] (println "Error:" error)))
+(fetch-user
+ (fn [result] (println "Success:" result))
+ (fn [error] (println "Error:" error)))
 ```
 
 ### Error Handling
@@ -157,7 +157,7 @@ Work with lazy, asynchronous data streams using transducers:
 Build your own control flow primitives:
 
 ```clojure
-(require '[is.simm.lean-cps :refer [cps run]])
+(require '[is.simm.lean-cps :refer [cps]])
 
 ;; Define a custom yield operation
 (defn yield-handler [env r e]
@@ -173,7 +173,7 @@ Build your own control flow primitives:
       (my-yield i)
       (println "After yield" i))))
 
-(run my-coroutine
+(my-coroutine
   (fn [result] (println "Done"))
   (fn [error] (println "Error:" error)))
 ```
@@ -199,22 +199,22 @@ The library integrates well with standard test frameworks:
 (deftest my-async-test
   (testing "async operations"
     (let [result (atom nil)]
-      (run (async
-             (reset! result (await some-async-op)))
-           (fn [_] (is (= @result expected)))
-           (fn [err] (is false "Should not fail"))))))
+      ((async
+         (reset! result (await some-async-op)))
+       (fn [_] (is (= @result expected)))
+       (fn [err] (is false "Should not fail"))))))
 
 ;; ClojureScript test
 (deftest my-async-test
   (testing "async operations"
     (test/async done  ; test.async pattern
-      (run (async
-             (let [result (await some-async-op)]
-               (is (= result expected))))
-           (fn [_] (done))
-           (fn [err] 
-             (is false "Should not fail")
-             (done))))))
+      ((async
+         (let [result (await some-async-op)]
+           (is (= result expected))))
+       (fn [_] (done))
+       (fn [err] 
+         (is false "Should not fail")
+         (done))))))
 ```
 
 ## API Reference

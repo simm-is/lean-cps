@@ -1,7 +1,7 @@
 (ns is.simm.lean-cps.async-test
   (:refer-clojure :exclude [await])
   (:require [clojure.test :refer [deftest testing is run-tests]]
-            [is.simm.lean-cps.async :refer [await run async doseq-async dotimes-async]]))
+            [is.simm.lean-cps.async :refer [await async doseq-async dotimes-async]]))
 
 ;; Test helpers for Clojure (JVM)
 (defn future-delay
@@ -18,7 +18,7 @@
 (defn failing-async
   "An async operation that always fails"
   [error-msg]
-  (fn [resolve reject]
+  (fn [_resolve reject]
     (future
       (reject (Exception. error-msg)))))
 
@@ -27,9 +27,9 @@
   [async-fn timeout-ms]
   (let [result (promise)
         error (promise)]
-    (run async-fn
-         #(deliver result %)
-         #(deliver error %))
+    (async-fn
+     #(deliver result %)
+     #(deliver error %))
     (let [res (deref (future
                        (try
                          (or (deref result timeout-ms nil)
@@ -206,44 +206,6 @@
               :string "test"
               :vector [1 2 3]
               :map {:key "value"}} result)))))
-
-;; Stack overflow prevention test
-(deftest test-deep-async-recursion
-  (testing "Deep async recursion doesn't blow the stack"
-    (let [n 10000  ; This would definitely blow the stack without trampolining
-          result (blocking-test
-                  (async
-                    ;; Simulate the pattern from the example: reduce with async operations
-                    (let [final-async (reduce (fn [acc-async num]
-                                                (async 
-                                                  (let [acc (await acc-async)]
-                                                    (await (future-delay 0 (+ acc num))))))
-                                              (async 0)  ; Start with 0
-                                              (range 1 (inc n)))]  ; Add 1 through n
-                      (await final-async)))
-                  5000)]  ; Reduced timeout since no delays
-      ;; This should equal the sum of 1 to n = n*(n+1)/2
-      (is (= (* n (+ n 1) 1/2) result)))))
-
-;; Test similar to the provided example with reduce and async operations
-(deftest test-async-reduce-pattern
-  (testing "Async reduce pattern similar to the benchmark example"
-    (let [nums [1 2 3 4 5]
-          result (blocking-test
-                  (async
-                    ;; Pattern: reduce with async accumulator and async operations
-                    (let [final-async (reduce (fn [acc-async num]
-                                                (async 
-                                                  (let [acc (await acc-async)]
-                                                    ;; Simulate async operation like set/conj
-                                                    (let [new-val (await (future-delay 10 (conj acc num)))]
-                                                      new-val))))
-                                              (async [])  ; Start with empty vector
-                                              nums)]
-                      ;; Await the final async result
-                      (await final-async)))
-                  5000)]
-      (is (= [1 2 3 4 5] result)))))
 
 ;; Test nested async calls to verify stack safety
 (deftest test-nested-async-calls

@@ -290,4 +290,11 @@
                    (macroexpand-all (cons 'do body))
                    (catch Exception e
                      (throw e)))]
-    `(fn [~r ~e] (is.simm.lean-cps.runtime/->thunk (fn [] ~(invert params expanded))))))
+    `(fn [~r ~e]
+       (try
+         (loop [result# ~(invert params expanded)]
+           (if (instance? is.simm.lean_cps.runtime.Thunk result#)
+             ;; If continuation returns a thunk, trampoline it
+             (recur ((.-f ^is.simm.lean_cps.runtime.Thunk result#)))
+             result#))
+         (catch ~(if (:js-globals &env) :default `Throwable) t# (~e t#))))))

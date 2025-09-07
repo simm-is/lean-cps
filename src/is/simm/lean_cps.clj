@@ -6,5 +6,3 @@
 ;; TODO decide on public API
 
 (def cps ioc/cps)
-
-(def run runtime/run)
