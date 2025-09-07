@@ -1,7 +1,8 @@
 (ns is.simm.lean-cps.async-test
   (:require [cljs.test :as test :refer-macros [deftest testing is]]
             [is.simm.lean-cps.async :refer [await run]]
-            [clojure.pprint :refer [pprint]])
+            [clojure.pprint :refer [pprint]]
+            [is.simm.lean-cps.sequence-test :as sequence])
   (:require-macros [is.simm.lean-cps.async :refer [async doseq-async dotimes-async]]))
 
 ;; Test helpers
@@ -326,7 +327,8 @@
 
 ;; Test runner
 (defn ^:export run-tests []
-  (test/run-tests 'is.simm.lean-cps.async-test))
+  (test/run-tests 'is.simm.lean-cps.async-test)
+  (test/run-tests 'is.simm.lean-cps.sequence-test))
 
 (defn ^:export init []
   (println "ClojureScript async tests initialized")
