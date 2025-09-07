@@ -26,7 +26,7 @@ The transformed code is also generally faster, both in synchronous sections and 
 ### Basic Async/Await
 
 ```clojure
-(require '[is.simm.lean-cps.async :refer [async await run]])
+(require '[is.simm.lean-cps.async :refer [async await]])
 
 ;; Define an async function
 (def fetch-user
@@ -56,7 +56,7 @@ Errors propagate naturally through the async chain:
         :fallback-value))))
 
 ;; Errors can also be handled in the error callback
-(run safe-operation
+(safe-operation
   (fn [result] (println "Got result:" result))
   (fn [error] 
     (log-error error)
@@ -193,7 +193,7 @@ The library integrates well with standard test frameworks:
 
 ```clojure
 (require '[clojure.test :refer [deftest testing is] :as test]
-         '[is.simm.lean-cps.async :refer [async await run]])
+         '[is.simm.lean-cps.async :refer [async await]])
 
 ;; Clojure test
 (deftest my-async-test
@@ -221,12 +221,12 @@ The library integrates well with standard test frameworks:
 
 ### Core (`is.simm.lean-cps`)
 - `(cps interceptors & body)` - Create a coroutine with custom interceptors
-- `(run coroutine success-fn error-fn)` - Execute a coroutine
+- `(coroutine success-fn error-fn)` - Execute a coroutine
 
 ### Async (`is.simm.lean-cps.async`)
 - `(async & body)` - Create an async function
 - `(await async-op)` - Await an async operation (must be inside async)
-- `(run async-fn success-fn error-fn)` - Execute an async function
+- `(async-fn success-fn error-fn)` - Execute an async function
 - `(doseq-async bindings & body)` - Async version of doseq
 - `(dotimes-async bindings & body)` - Async version of dotimes
 
