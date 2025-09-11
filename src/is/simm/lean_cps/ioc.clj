@@ -6,17 +6,11 @@
 (defn resolve-var-cljs [env sym]
   ;; in cljs compilation
   (require 'cljs.analyzer)
-  #_(prn "Resolving" sym "in env" (:name env) )
-  #_(prn "Resolved to" ((resolve 'cljs.analyzer/resolve-var) env sym))
   ((resolve 'cljs.analyzer/resolve-var) env sym))
 
 (defn resolve-macro-var-cljs [env sym]
   ;; in cljs compilation  
   (require 'cljs.analyzer)
-  #_(prn "Resolving" sym "in env" )
-  (when-not sym
-    (throw (ex-info "Can't resolve nil symbol" {:env env :sym sym})))
-  #_(prn "Resolved to" ((resolve 'cljs.analyzer/resolve-macro-var) env sym))
   ((resolve 'cljs.analyzer/resolve-macro-var) env sym))
 
 (defn var-name [env sym]
@@ -32,15 +26,15 @@
                 nsp (.getName ^clojure.lang.Namespace (:ns (meta v)))]
             (symbol (name nsp) (name nm))))))))
 
-(defn has-interceptors?
-  [form {:keys [interceptors recur-target env] :as ctx}]
+(defn has-breakpoints?
+  [form {:keys [breakpoints recur-target env] :as ctx}]
   (let [sym (when (seq? form) (first form))
         resolved-sym (var-name env sym)
-        has-term? (contains? interceptors resolved-sym)]
+        has-term? (contains? breakpoints resolved-sym)]
     (cond has-term? true
           (and recur-target (= 'recur sym)) true
-          (= 'loop* sym) (some #(has-interceptors? % (dissoc ctx :recur-target)) (rest form))
-          (coll? form) (some #(has-interceptors? % ctx) form)
+          (= 'loop* sym) (some #(has-breakpoints? % (dissoc ctx :recur-target)) (rest form))
+          (coll? form) (some #(has-breakpoints? % ctx) form)
           :else false)))
 
 (defn can-inline?
@@ -53,7 +47,7 @@
 (declare invert)
 
 (defn resolve-sequentially [ctx coll then]
-  (let [[syncs [asn & others]] (split-with #(not (has-interceptors? % ctx)) coll)]
+  (let [[syncs [asn & others]] (split-with #(not (has-breakpoints? % ctx)) coll)]
     (if asn
       (let [syncs (map #(if (can-inline? %) [%] [(gensym) %]) syncs)
             sync-bindings (->> syncs (filter second) (mapcat identity))
@@ -78,14 +72,14 @@
            e             ; symbol of error handling function (raise)
            sync-recur?   ; indicates when synchronous recur is possible
            recur-target  ; symbol of asynchronous recur function if any
-           interceptors   ; map of symbols that break flow to symbols of handlers
+           breakpoints   ; map of symbols that break flow to symbols of handlers
            env]          ; the current macroexpansion environment
     :as ctx}
    form]
   (let [[head & tail] (when (seq? form) form)
         all-ex (if (:js-globals env) :default `Throwable)]
     (cond
-      (not (has-interceptors? form ctx))
+      (not (has-breakpoints? form ctx))
       `(~r ~form)
 
       (if (and head (:js-globals env))
@@ -109,7 +103,7 @@
         if
         (let [[con left right & unexpected-others] tail
               cont (gensym "cont")]
-          (if (has-interceptors? con ctx)
+          (if (has-breakpoints? con ctx)
             (let [ctx' (dissoc ctx :sync-recur?)]
               `(letfn [(~cont [con#] (if con# ~(invert ctx' left)
                                          ~(invert ctx' right)
@@ -126,7 +120,7 @@
         let*
         (let [bindings-vec (first tail)
               bindings-pairs (partition 2 bindings-vec)
-              [syncs [[sym asn] & others]] (split-with #(not (has-interceptors? (second %) ctx)) bindings-pairs)
+              [syncs [[sym asn] & others]] (split-with #(not (has-breakpoints? (second %) ctx)) bindings-pairs)
               cont (gensym "cont")
               updated-ctx (add-env-syms ctx (map first syncs))
               generated-form (if asn
@@ -151,7 +145,7 @@
                           `(do ~@(rest tail))))
 
         do
-        (let [[syncs [asn & others]] (split-with #(not (has-interceptors? % ctx)) tail)
+        (let [[syncs [asn & others]] (split-with #(not (has-breakpoints? % ctx)) tail)
               cont (gensym "cont")]
           (if asn
             `(do ~@syncs
@@ -166,12 +160,12 @@
         (let [[binds & body] tail
               bind-names (->> binds (partition 2) (map first))]
           (cond
-            (has-interceptors? binds ctx)
+            (has-breakpoints? binds ctx)
             (invert ctx `(let [~@binds]
                            (loop [~@(interleave bind-names bind-names)]
                              ~@body)))
 
-            (has-interceptors? body (dissoc ctx :recur-target))
+            (has-breakpoints? body (dissoc ctx :recur-target))
             (let [recur-target (gensym "recur")
                   updated-ctx (add-env-syms ctx bind-names)]
               `(letfn [(~recur-target [~@bind-names]
@@ -186,7 +180,7 @@
 
         recur
         (cond
-          (and sync-recur? (not (has-interceptors? form (dissoc ctx :recur-target))))
+          (and sync-recur? (not (has-breakpoints? form (dissoc ctx :recur-target))))
           form
 
           recur-target
@@ -247,7 +241,7 @@
               [_ object & field-args] (when (and (seq? subject)
                                                  (= '. (first subject)))
                                         subject)]
-          (if (and object (has-interceptors? object ctx))
+          (if (and object (has-breakpoints? object ctx))
             (resolve-sequentially ctx [object args]
                                   (fn [[object args]] `(~r (set! (. ~object ~@field-args) ~@args))))
             (resolve-sequentially ctx args
@@ -257,8 +251,8 @@
                         {:unknown-special-form head :form form})))
 
       ;; Invoke termination handler, e.g. do-await
-      (contains? interceptors (var-name env head))
-      (let [handler (resolve (interceptors (var-name env head)))]
+      (contains? breakpoints (var-name env head))
+      (let [handler (resolve (breakpoints (var-name env head)))]
         (resolve-sequentially ctx (rest form) (handler env r e)))
 
       ;; TODO this should actually be last, vector is seq?
@@ -284,14 +278,14 @@
    encountered, and eventually calling one of the continuations with the
    result.
 
-   terms is a map of fully qualified interceptor symbols to handler symbols.
+   terms is a map of fully qualified breakpoint symbols to handler symbols.
    A call of the form (term args..) is forwarded to the corresponding handler
    (handler succ exc args..), which is expected to eventually call either succ
    with the value or exc with exception to substitute the original call result
    and resuming the execution."
   [terms & body]
   (let [r (gensym) e (gensym)
-        params {:r r :e e :env &env :interceptors terms}
+        params {:r r :e e :env &env :breakpoints terms}
         expanded (try
                    (macroexpand-all (cons 'do body))
                    (catch Exception e

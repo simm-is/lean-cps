@@ -1,6 +1,6 @@
 # lean-cps
 
-A lightweight Clojure/ClojureScript library for continuation-passing style (CPS) transformations derived from [await-cps](https://github.com/mszajna/await-cps). The CPS transform rewrites code similar to manual callback implementations by invoking the callback (continuation) only where necessary (at an interceptor). This approach leaves the remaining code synchronous and therefore retains readability compared to the transformations in [core.async](https://github.com/clojure/core.async) or [cloroutine](https://github.com/leonoel/cloroutine). 
+A lightweight Clojure/ClojureScript library for continuation-passing style (CPS) transformations derived from [await-cps](https://github.com/mszajna/await-cps). The CPS transform rewrites code similar to manual callback implementations by invoking the callback (continuation) only where necessary (at a breakpoint). This approach leaves the remaining code synchronous and therefore retains readability compared to the transformations in [core.async](https://github.com/clojure/core.async) or [cloroutine](https://github.com/leonoel/cloroutine). 
 
 The transformed code is also generally faster, both in synchronous sections and when dispatching into callbacks. It does not provide any processing or scheduling framework, instead using safe trampolining execution. This avoids scheduling overhead and only hits a threadpool dispatcher or JS event loop if the effect handler explicitly schedules it.
 
@@ -8,7 +8,7 @@ The transformed code is also generally faster, both in synchronous sections and 
 
 - **Async/Await**: Write asynchronous code that looks synchronous
 - **Async Sequences**: Lazy async sequences with transducer support
-- **Custom Coroutines**: Build your own control flow primitives with interceptors
+- **Custom Coroutines**: Build your own control flow primitives with breakpoints
 - **Cross-platform**: Works seamlessly with both Clojure and ClojureScript
 - **Lightweight**: Minimal dependencies and overhead
 - **Fast**: No scheduling overhead, synchronous code stays synchronous
@@ -152,7 +152,7 @@ Work with lazy, asynchronous data streams using transducers:
 
 ## Advanced Usage
 
-### Creating Custom Interceptors
+### Creating Custom Breakpoints
 
 Build your own control flow primitives:
 
@@ -165,7 +165,7 @@ Build your own control flow primitives:
     `(schedule-microtask 
        (fn [] (~r ~(first args))))))
 
-;; Create a coroutine with custom interceptor
+;; Create a coroutine with custom breakpoint
 (def my-coroutine
   (cps {`my-yield `yield-handler}
     (let [i 3]
@@ -182,7 +182,7 @@ Build your own control flow primitives:
 
 The library is designed for high performance:
 
-- **Minimal transformation**: Only rewrites code at interceptor points
+- **Minimal transformation**: Only rewrites code at breakpoint points
 - **No scheduling overhead**: Direct callback execution unless you add scheduling
 - **Safe trampolining**: Prevents stack overflow while maintaining speed
 - **Synchronous fast path**: Non-async code runs at full speed
@@ -220,7 +220,7 @@ The library integrates well with standard test frameworks:
 ## API Reference
 
 ### Core (`is.simm.lean-cps`)
-- `(cps interceptors & body)` - Create a coroutine with custom interceptors
+- `(cps breakpoints & body)` - Create a coroutine with custom breakpoints
 - `(coroutine success-fn error-fn)` - Execute a coroutine
 
 ### Async (`is.simm.lean-cps.async`)

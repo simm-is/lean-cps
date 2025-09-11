@@ -47,8 +47,8 @@ clojure -M:repl
 ### Key Concepts
 
 **CPS Transformation**: The library transforms regular Clojure code into continuation-passing style at compile time using macros. This is done through:
-- The `cps` macro that accepts interceptors and transforms code blocks
-- Interceptors that handle specific function calls (like `await`) during transformation
+- The `cps` macro that accepts breakpoints and transforms code blocks
+- breakpoints that handle specific function calls (like `await`) during transformation
 - The IOC namespace walks the AST and inverts control flow where needed
 
 **Trampolining**: The runtime uses safe trampolining to avoid stack overflow while maintaining synchronous code sections for performance. Async operations only hit the JS event loop when the effect handler schedules it.

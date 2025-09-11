@@ -1,7 +1,7 @@
 (ns is.simm.lean-cps.async
   (:refer-clojure :exclude [await])
   (:require [is.simm.lean-cps.runtime :as runtime])
-  #?(:clj (:require [is.simm.lean-cps.ioc :refer [cps has-interceptors?]]))
+  #?(:clj (:require [is.simm.lean-cps.ioc :refer [cps has-breakpoints?]]))
   #?(:cljs (:require-macros [is.simm.lean-cps.async :refer [async doseq-async dotimes-async]])))
 
 (defn await
@@ -34,14 +34,14 @@
                  (catch ~(if (:js-globals env) :default `Throwable) t# (~e t#))))]
        (~(first args) safe-r# ~e))))
 
-(def ^:no-doc interceptors
+(def ^:no-doc breakpoints
   {`await `await-handler})
 
 #?(:clj
    (defmacro async
      "Creates an asynchronous coroutine."
      [& body]
-     `(cps ~interceptors ~@body))) 
+     `(cps ~breakpoints ~@body))) 
 
 ;; experimental macros
 
@@ -52,7 +52,7 @@
    before moving to the next item. Must be used within an async block."
      [bindings & body]
      (let [binding-pairs (partition 2 bindings)
-           ctx {:interceptors interceptors :env &env}]
+           ctx {:breakpoints breakpoints :env &env}]
        (letfn [(expand-doseq [pairs]
                  (if (seq pairs)
                    (let [[sym coll] (first pairs)
@@ -68,9 +68,9 @@
                    `(do ~@body)))]
 
          ;; Check if bindings contain await operations
-         (if (has-interceptors? bindings ctx)
+         (if (has-breakpoints? bindings ctx)
            ;; Bindings contain await - expand to nested let/doseq structure that CPS will transform
-           (let [[syncs [[sym asn] & others]] (split-with #(not (has-interceptors? (second %) ctx)) binding-pairs)]
+           (let [[syncs [[sym asn] & others]] (split-with #(not (has-breakpoints? (second %) ctx)) binding-pairs)]
              (if asn
                ;; First async binding found - await the collection, then continue processing
                (let [async-coll-sym (gensym "async-coll")]
@@ -85,7 +85,7 @@
                             (doseq-async [~@(mapcat identity others)]
                               ~@body))))
                    ;; No more bindings - check if body has async operations
-                   (if (has-interceptors? `(do ~@body) ctx)
+                   (if (has-breakpoints? `(do ~@body) ctx)
                      ;; Body has async - expand to loop/recur structure  
                      `(let [~async-coll-sym ~asn]
                         ~(expand-doseq (concat syncs [[sym async-coll-sym]])))
@@ -97,11 +97,11 @@
                            `(doseq [~sym ~async-coll-sym]
                               ~@body))))))
                ;; No async bindings after all - check body
-               (if (has-interceptors? `(do ~@body) ctx)
+               (if (has-breakpoints? `(do ~@body) ctx)
                  (expand-doseq binding-pairs)
                  `(doseq ~bindings ~@body))))
            ;; No async in bindings - check body
-           (if (has-interceptors? `(do ~@body) ctx)
+           (if (has-breakpoints? `(do ~@body) ctx)
              ;; Body contains await - convert to explicit loop/recur that will be CPS-transformed
              (expand-doseq binding-pairs)
              ;; No async operations - use regular doseq
@@ -113,8 +113,8 @@
    Processes iterations sequentially, waiting for each async operation to complete
    before moving to the next iteration."
      [[sym init-form] & body]
-     (let [ctx {:interceptors interceptors :env &env}]
-       (if (has-interceptors? `(do ~@body) ctx)
+     (let [ctx {:breakpoints breakpoints :env &env}]
+       (if (has-breakpoints? `(do ~@body) ctx)
          ;; Body contains await - generate loop that will be CPS-transformed
          `(let [max# ~init-form]
             (loop [~sym 0]
