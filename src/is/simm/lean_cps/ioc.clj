@@ -6,11 +6,17 @@
 (defn resolve-var-cljs [env sym]
   ;; in cljs compilation
   (require 'cljs.analyzer)
+  #_(prn "Resolving" sym "in env" (:name env) )
+  #_(prn "Resolved to" ((resolve 'cljs.analyzer/resolve-var) env sym))
   ((resolve 'cljs.analyzer/resolve-var) env sym))
 
 (defn resolve-macro-var-cljs [env sym]
   ;; in cljs compilation  
   (require 'cljs.analyzer)
+  #_(prn "Resolving" sym "in env" )
+  (when-not sym
+    (throw (ex-info "Can't resolve nil symbol" {:env env :sym sym})))
+  #_(prn "Resolved to" ((resolve 'cljs.analyzer/resolve-macro-var) env sym))
   ((resolve 'cljs.analyzer/resolve-macro-var) env sym))
 
 (defn var-name [env sym]
@@ -82,7 +88,7 @@
       (not (has-interceptors? form ctx))
       `(~r ~form)
 
-      (if (:js-globals env)
+      (if (and head (:js-globals env))
         ;; use cljs.analyzer to find macro var info
         (:macro (resolve-macro-var-cljs env head))
         ;; use normal Clojure resolve
