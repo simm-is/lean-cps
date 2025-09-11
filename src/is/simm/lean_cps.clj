@@ -3,6 +3,4 @@
   (:require [is.simm.lean-cps.runtime :as runtime]
             [is.simm.lean-cps.ioc :as ioc]))
 
-;; TODO decide on public API
 
-(def cps ioc/cps)

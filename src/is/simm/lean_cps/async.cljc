@@ -1,7 +1,8 @@
 (ns is.simm.lean-cps.async
   (:refer-clojure :exclude [await])
-  (:require [is.simm.lean-cps.runtime :as runtime])
-  #?(:clj (:require [is.simm.lean-cps.ioc :refer [cps has-breakpoints?]]))
+  (:require [is.simm.lean-cps.runtime :as runtime]
+            #?(:clj [riddley.walk :refer [macroexpand-all]])
+            #?(:clj [is.simm.lean-cps.ioc :refer [has-breakpoints? invert]]))
   #?(:cljs (:require-macros [is.simm.lean-cps.async :refer [async doseq-async dotimes-async]])))
 
 (defn await
@@ -39,9 +40,30 @@
 
 #?(:clj
    (defmacro async
-     "Creates an asynchronous coroutine."
+     "Defines a function that takes a successful and exceptional continuation,
+   and runs the body, suspending execution whenever any of the breakpoints (await) is
+   encountered, and eventually calling one of the continuations with the
+   result.
+
+   A call of the form (breakpoint args..) is forwarded to the corresponding handler
+   (handler succ exc args..), which is expected to eventually call either succ
+   with the value or exc with exception to substitute the original call result
+   and resuming the execution."
      [& body]
-     `(cps ~breakpoints ~@body))) 
+     (let [r (gensym) e (gensym)
+           params {:r r :e e :env &env :breakpoints breakpoints}
+           expanded (try
+                      (macroexpand-all (cons 'do body))
+                      (catch Exception e
+                        (throw e)))]
+       `(fn [~r ~e]
+          (try
+            (loop [result# ~(invert params expanded)]
+              (if (instance? is.simm.lean_cps.runtime.Thunk result#)
+                ;; If continuation returns a thunk, trampoline it
+                (recur ((.-f ^is.simm.lean_cps.runtime.Thunk result#)))
+                result#))
+            (catch ~(if (:js-globals &env) :default `Throwable) t# (~e t#)))))))
 
 ;; experimental macros
 

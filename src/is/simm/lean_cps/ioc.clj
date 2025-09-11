@@ -1,7 +1,6 @@
 (ns is.simm.lean-cps.ioc
   "Inversion of control, i.e. transformation into continuation-passing style (CPS)."
-  (:require [riddley.walk :refer [macroexpand-all]]
-            #_[cljs.analyzer :refer [resolve-var resolve-macro-var]]))
+  #_(:require [cljs.analyzer :refer [resolve-var resolve-macro-var]]))
 
 (defn resolve-var-cljs [env sym]
   ;; in cljs compilation
@@ -255,7 +254,6 @@
       (let [handler (resolve (breakpoints (var-name env head)))]
         (resolve-sequentially ctx (rest form) (handler env r e)))
 
-      ;; TODO this should actually be last, vector is seq?
       (seq? form)
       (resolve-sequentially ctx form (fn [form] `(~r ~(seq form))))
 
@@ -271,30 +269,3 @@
 
       :else (throw (ex-info (str "Unsupported form [" form "]")
                             {:form form})))))
-
-(defmacro cps
-  "Defines a function that takes a successful and exceptional continuation,
-   and runs the body, suspending execution whenever any of the terms is
-   encountered, and eventually calling one of the continuations with the
-   result.
-
-   terms is a map of fully qualified breakpoint symbols to handler symbols.
-   A call of the form (term args..) is forwarded to the corresponding handler
-   (handler succ exc args..), which is expected to eventually call either succ
-   with the value or exc with exception to substitute the original call result
-   and resuming the execution."
-  [terms & body]
-  (let [r (gensym) e (gensym)
-        params {:r r :e e :env &env :breakpoints terms}
-        expanded (try
-                   (macroexpand-all (cons 'do body))
-                   (catch Exception e
-                     (throw e)))]
-    `(fn [~r ~e]
-       (try
-         (loop [result# ~(invert params expanded)]
-           (if (instance? is.simm.lean_cps.runtime.Thunk result#)
-             ;; If continuation returns a thunk, trampoline it
-             (recur ((.-f ^is.simm.lean_cps.runtime.Thunk result#)))
-             result#))
-         (catch ~(if (:js-globals &env) :default `Throwable) t# (~e t#))))))

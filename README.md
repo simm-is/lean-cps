@@ -157,17 +157,45 @@ Work with lazy, asynchronous data streams using transducers:
 Build your own control flow primitives:
 
 ```clojure
-(require '[is.simm.lean-cps :refer [cps]])
+(def ^:no-doc breakpoints
+  {`my-breakpoint `my-handler})
 
-;; Define a custom yield operation
-(defn yield-handler [env r e]
+#?(:clj
+   (defmacro my-cps
+     "Defines a function that takes a successful and exceptional continuation,
+   and runs the body, suspending execution whenever any of the breakpoints is
+   encountered, and eventually calling one of the continuations with the
+   result.
+
+   A call of the form (breakpoint args..) is forwarded to the corresponding handler
+   (handler succ exc args..), which is expected to eventually call either succ
+   with the value or exc with exception to substitute the original call result
+   and resuming the execution."
+     [& body]
+     (let [r (gensym) e (gensym)
+           params {:r r :e e :env &env :breakpoints breakpoints}
+           expanded (try
+                      (macroexpand-all (cons 'do body))
+                      (catch Exception e
+                        (throw e)))]
+       `(fn [~r ~e]
+          (try
+            (loop [result# ~(invert params expanded)]
+              (if (instance? is.simm.lean_cps.runtime.Thunk result#)
+                ;; If continuation returns a thunk, trampoline it
+                (recur ((.-f ^is.simm.lean_cps.runtime.Thunk result#)))
+                result#))
+            (catch ~(if (:js-globals &env) :default `Throwable) t# (~e t#)))))))
+
+;; Define a custom handler
+(defn my-handler [env r e]
   (fn [args]
     `(schedule-microtask 
        (fn [] (~r ~(first args))))))
 
 ;; Create a coroutine with custom breakpoint
 (def my-coroutine
-  (cps {`my-yield `yield-handler}
+  (my-cps
     (let [i 3]
       (println "Before yield" i)
       (my-yield i)
