@@ -244,7 +244,16 @@
               (= "Test timed out" result))
           (str "Expected success [0 10 20] or timeout, got: " result)))))
 
-
+;; Test def await in async context
+(deftest test-def-await-in-async
+  (testing "Defining a var with await inside async"
+    (declare async-value) ; TODO: Declare the var to avoid compile error
+    (let [result (blocking-test
+                  (async
+                   (def async-value (await (future-delay 20 99)))
+                   async-value)
+                  200)]
+      (is (= 99 result)))))
 
 ;; Test doseq-async
 (deftest test-doseq-async-basic

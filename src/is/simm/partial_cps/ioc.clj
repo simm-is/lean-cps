@@ -96,7 +96,7 @@
       (or (special-symbol? head) (= head 'let) (= head 'letfn) (= head 'loop) (= head 'fn))
       (case head
 
-        (quote var fn* fn def deftype* reify* clojure.core/import*)
+        (quote var fn* fn deftype* reify* clojure.core/import*)
         `(~r ~form)
 
         if
@@ -245,6 +245,13 @@
                                   (fn [[object args]] `(~r (set! (. ~object ~@field-args) ~@args))))
             (resolve-sequentially ctx args
                                   (fn [args] `(~r (set! ~subject ~@args))))))
+
+        def
+        (let [[name & value] tail]
+          (if (has-breakpoints? (first value) ctx)
+            (resolve-sequentially ctx value
+                                  (fn [value] `(~r (def ~name ~@value))))
+            `(~r ~form)))
 
         (throw (ex-info (str "Unsupported special symbol [" head "]")
                         {:unknown-special-form head :form form})))
