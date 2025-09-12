@@ -1,9 +1,9 @@
-(ns is.simm.lean-cps.async-test
+(ns is.simm.partial-cps.async-test
   (:require [cljs.test :as test :refer-macros [deftest testing is]]
-            [is.simm.lean-cps.async :refer [await]]
+            [is.simm.partial-cps.async :refer [await]]
             [clojure.pprint :refer [pprint]]
-            [is.simm.lean-cps.sequence-test :as sequence])
-  (:require-macros [is.simm.lean-cps.async :refer [async doseq-async dotimes-async]]))
+            [is.simm.partial-cps.sequence-test :as sequence])
+  (:require-macros [is.simm.partial-cps.async :refer [async doseq-async dotimes-async]]))
 
 ;; Test helpers
 (defn promise-delay
@@ -251,5 +251,5 @@
 
 ;; Test runner
 (defn ^:export run-tests []
-  (test/run-tests 'is.simm.lean-cps.async-test)
-  (test/run-tests 'is.simm.lean-cps.sequence-test))
+  (test/run-tests 'is.simm.partial-cps.async-test)
+  (test/run-tests 'is.simm.partial-cps.sequence-test))

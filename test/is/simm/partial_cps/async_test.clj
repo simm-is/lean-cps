@@ -1,7 +1,7 @@
-(ns is.simm.lean-cps.async-test
+(ns is.simm.partial-cps.async-test
   (:refer-clojure :exclude [await])
   (:require [clojure.test :refer [deftest testing is run-tests]]
-            [is.simm.lean-cps.async :refer [await async doseq-async dotimes-async]]))
+            [is.simm.partial-cps.async :refer [await async doseq-async dotimes-async]]))
 
 ;; Test helpers for Clojure (JVM)
 (defn future-delay
@@ -345,4 +345,4 @@
       (is (= [[:x 1] [:x 2] [:y 1] [:y 2]] @results)))))
 
 (defn run-all-tests []
-  (run-tests 'is.simm.lean-cps-test))
+  (run-tests 'is.simm.partial-cps-test))

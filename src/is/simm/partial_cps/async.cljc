@@ -1,9 +1,9 @@
-(ns is.simm.lean-cps.async
+(ns is.simm.partial-cps.async
   (:refer-clojure :exclude [await])
-  (:require [is.simm.lean-cps.runtime :as runtime]
+  (:require [is.simm.partial-cps.runtime :as runtime]
             #?(:clj [riddley.walk :refer [macroexpand-all]])
-            #?(:clj [is.simm.lean-cps.ioc :refer [has-breakpoints? invert]]))
-  #?(:cljs (:require-macros [is.simm.lean-cps.async :refer [async doseq-async dotimes-async]])))
+            #?(:clj [is.simm.partial-cps.ioc :refer [has-breakpoints? invert]]))
+  #?(:cljs (:require-macros [is.simm.partial-cps.async :refer [async doseq-async dotimes-async]])))
 
 (defn await
   "Awaits the asynchronous execution of continuation-passing style function
@@ -28,9 +28,9 @@
     `(letfn [(safe-r# [v#]
                (try
                  (loop [result# (~r v#)]
-                   (if (instance? is.simm.lean_cps.runtime.Thunk result#)
+                   (if (instance? is.simm.partial_cps.runtime.Thunk result#)
                      ;; If continuation returns a thunk, trampoline it
-                     (recur ((.-f ^is.simm.lean_cps.runtime.Thunk result#)))
+                     (recur ((.-f ^is.simm.partial_cps.runtime.Thunk result#)))
                      result#))
                  (catch ~(if (:js-globals env) :default `Throwable) t# (~e t#))))]
        (~(first args) safe-r# ~e))))
@@ -59,9 +59,9 @@
        `(fn [~r ~e]
           (try
             (loop [result# ~(invert params expanded)]
-              (if (instance? is.simm.lean_cps.runtime.Thunk result#)
+              (if (instance? is.simm.partial_cps.runtime.Thunk result#)
                 ;; If continuation returns a thunk, trampoline it
-                (recur ((.-f ^is.simm.lean_cps.runtime.Thunk result#)))
+                (recur ((.-f ^is.simm.partial_cps.runtime.Thunk result#)))
                 result#))
             (catch ~(if (:js-globals &env) :default `Throwable) t# (~e t#)))))))
 

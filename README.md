@@ -1,4 +1,4 @@
-# lean-cps
+# partial-cps
 
 A lightweight Clojure/ClojureScript library for continuation-passing style (CPS) transformations derived from [await-cps](https://github.com/mszajna/await-cps). The CPS transform rewrites code similar to manual callback implementations by invoking the callback (continuation) only where necessary (at a breakpoint). This approach leaves the remaining code synchronous and therefore retains readability compared to the transformations in [core.async](https://github.com/clojure/core.async) or [cloroutine](https://github.com/leonoel/cloroutine). 
 
@@ -18,7 +18,7 @@ The transformed code is also generally faster, both in synchronous sections and 
 
 ### deps.edn
 ```clojure
-{is.simm/lean-cps {:git/url "https://github.com/simm-is/lean-cps" :git/sha "LATEST"}} ; Check github for latest commit
+{is.simm/partial-cps {:git/url "https://github.com/simm-is/partial-cps" :git/sha "LATEST"}} ; Check github for latest commit
 ```
 
 ## Usage
@@ -26,7 +26,7 @@ The transformed code is also generally faster, both in synchronous sections and 
 ### Basic Async/Await
 
 ```clojure
-(require '[is.simm.lean-cps.async :refer [async await]])
+(require '[is.simm.partial-cps.async :refer [async await]])
 
 ;; Define an async function
 (def fetch-user
@@ -68,7 +68,7 @@ Errors propagate naturally through the async chain:
 The library provides async versions of common control flow constructs:
 
 ```clojure
-(require '[is.simm.lean-cps.async :refer [doseq-async dotimes-async]])
+(require '[is.simm.partial-cps.async :refer [doseq-async dotimes-async]])
 
 ;; Process items sequentially with async operations
 (async
@@ -88,7 +88,7 @@ The library provides async versions of common control flow constructs:
 Work with lazy, asynchronous data streams using transducers:
 
 ```clojure
-(require '[is.simm.lean-cps.sequence :as seq])
+(require '[is.simm.partial-cps.sequence :as seq])
 
 ;; Define an async sequence
 (defrecord AsyncRange [start end]
@@ -181,9 +181,9 @@ Build your own control flow primitives:
        `(fn [~r ~e]
           (try
             (loop [result# ~(invert params expanded)]
-              (if (instance? is.simm.lean_cps.runtime.Thunk result#)
+              (if (instance? is.simm.partial_cps.runtime.Thunk result#)
                 ;; If continuation returns a thunk, trampoline it
-                (recur ((.-f ^is.simm.lean_cps.runtime.Thunk result#)))
+                (recur ((.-f ^is.simm.partial_cps.runtime.Thunk result#)))
                 result#))
             (catch ~(if (:js-globals &env) :default `Throwable) t# (~e t#)))))))
 
@@ -221,7 +221,7 @@ The library integrates well with standard test frameworks:
 
 ```clojure
 (require '[clojure.test :refer [deftest testing is] :as test]
-         '[is.simm.lean-cps.async :refer [async await]])
+         '[is.simm.partial-cps.async :refer [async await]])
 
 ;; Clojure test
 (deftest my-async-test
@@ -247,18 +247,18 @@ The library integrates well with standard test frameworks:
 
 ## API Reference
 
-### Core (`is.simm.lean-cps`)
+### Core (`is.simm.partial-cps`)
 - `(cps breakpoints & body)` - Create a coroutine with custom breakpoints
 - `(coroutine success-fn error-fn)` - Execute a coroutine
 
-### Async (`is.simm.lean-cps.async`)
+### Async (`is.simm.partial-cps.async`)
 - `(async & body)` - Create an async function
 - `(await async-op)` - Await an async operation (must be inside async)
 - `(async-fn success-fn error-fn)` - Execute an async function
 - `(doseq-async bindings & body)` - Async version of doseq
 - `(dotimes-async bindings & body)` - Async version of dotimes
 
-### Sequences (`is.simm.lean-cps.sequence`)
+### Sequences (`is.simm.partial-cps.sequence`)
 - `IAsyncSeq` - Protocol for async sequences
   - `(-afirst this)` - Return async expression yielding first element
   - `(-arest this)` - Return async expression yielding rest

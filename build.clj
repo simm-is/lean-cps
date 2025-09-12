@@ -4,7 +4,7 @@
             [clojure.tools.build.api :as b]
             [deps-deploy.deps-deploy :as dd]))
 
-(def lib 'is.simm/lean-cps)
+(def lib 'is.simm/partial-cps)
 (def version "0.1.0-SNAPSHOT")
 #_ ; alternatively, use MAJOR.MINOR.COMMITS:
 (def version (format "1.0.%s" (b/git-count-revs nil)))
@@ -25,7 +25,7 @@
 
 (defn- pom-template [version]
   [[:description "FIXME: my new library."]
-   [:url "https://github.com/is.simm/lean-cps"]
+   [:url "https://github.com/is.simm/partial-cps"]
    [:licenses
     [:license
      [:name "Eclipse Public License"]
@@ -34,9 +34,9 @@
     [:developer
      [:name "Christian-weilbach"]]]
    [:scm
-    [:url "https://github.com/is.simm/lean-cps"]
-    [:connection "scm:git:https://github.com/is.simm/lean-cps.git"]
-    [:developerConnection "scm:git:ssh:git@github.com:is.simm/lean-cps.git"]
+    [:url "https://github.com/is.simm/partial-cps"]
+    [:connection "scm:git:https://github.com/is.simm/partial-cps.git"]
+    [:developerConnection "scm:git:ssh:git@github.com:is.simm/partial-cps.git"]
     [:tag (str "v" version)]]])
 
 (defn- jar-opts [opts]

@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-lean-cps is a Clojure/ClojureScript library for continuation-passing style (CPS) transformations. It provides lightweight coroutines and async/await functionality without the overhead of scheduling frameworks like core.async.
+partial-cps is a Clojure/ClojureScript library for continuation-passing style (CPS) transformations. It provides lightweight coroutines and async/await functionality without the overhead of scheduling frameworks like core.async.
 
 ## Development Commands
 
@@ -39,10 +39,10 @@ clojure -M:repl
 
 ### Core Namespaces
 
-1. **is.simm.lean-cps** - Public API entry point that re-exports key functions
-2. **is.simm.lean-cps.ioc** - Inversion of Control implementation for CPS transformation
-3. **is.simm.lean-cps.runtime** - Runtime execution and trampolining for coroutines
-4. **is.simm.lean-cps.async** - Async/await implementation built on top of the CPS transform
+1. **is.simm.partial-cps** - Public API entry point that re-exports key functions
+2. **is.simm.partial-cps.ioc** - Inversion of Control implementation for CPS transformation
+3. **is.simm.partial-cps.runtime** - Runtime execution and trampolining for coroutines
+4. **is.simm.partial-cps.async** - Async/await implementation built on top of the CPS transform
 
 ### Key Concepts
 

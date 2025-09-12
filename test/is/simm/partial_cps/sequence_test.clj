@@ -1,8 +1,8 @@
-(ns is.simm.lean-cps.sequence-test
+(ns is.simm.partial-cps.sequence-test
   (:refer-clojure :exclude [first rest sequence transduce into])
   (:require [clojure.test :refer [deftest testing is run-tests]]
-            [is.simm.lean-cps.sequence :as seq]
-            [is.simm.lean-cps.async :refer [await async]]))
+            [is.simm.partial-cps.sequence :as seq]
+            [is.simm.partial-cps.async :refer [await async]]))
 
 ;; Test helpers
 (defn future-delay
@@ -38,7 +38,7 @@
 
 ;; Simple async sequence implementation for testing
 (defrecord SimpleAsyncSeq [items]
-  is.simm.lean-cps.sequence/IAsyncSeq
+  is.simm.partial-cps.sequence/IAsyncSeq
   (-afirst [_]
     (async (clojure.core/first items)))
   (-arest [_]
@@ -48,7 +48,7 @@
 
 ;; Slow async sequence for testing lazy evaluation
 (defrecord SlowAsyncSeq [items delay-ms processed-count]
-  is.simm.lean-cps.sequence/IAsyncSeq
+  is.simm.partial-cps.sequence/IAsyncSeq
   (-afirst [_]
     (async 
       (when (clojure.core/seq items)
@@ -304,7 +304,7 @@
 ;; Error Handling Tests
 (deftest test-sequence-with-error-in-source
   (testing "Error handling in async sequence operations"
-    (let [failing-seq (reify is.simm.lean-cps.sequence/IAsyncSeq
+    (let [failing-seq (reify is.simm.partial-cps.sequence/IAsyncSeq
                         (-afirst [_] 
                           (async (throw (Exception. "Source error"))))
                         (-arest [_] 
@@ -351,4 +351,4 @@
       (is (= [1 10] result)))))
 
 (defn run-all-sequence-tests []
-  (run-tests 'is.simm.lean-cps.sequence-test))
+  (run-tests 'is.simm.partial-cps.sequence-test))

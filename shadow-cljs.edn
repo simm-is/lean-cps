@@ -11,7 +11,7 @@
  {:test
   {:target :node-script
    :output-to "target/test.js"
-   :main is.simm.lean-cps.async-test/run-tests
+   :main is.simm.partial-cps.async-test/run-tests
    :autorun true}
    
   :browser-test
@@ -23,4 +23,4 @@
   :node-repl
   {:target :node-script
    :output-to "target/node-repl.js"
-   :main is.simm.lean-cps.sequence-test/init}}}
+   :main is.simm.partial-cps.sequence-test/init}}}

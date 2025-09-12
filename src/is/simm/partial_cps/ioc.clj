@@ -1,4 +1,4 @@
-(ns is.simm.lean-cps.ioc
+(ns is.simm.partial-cps.ioc
   "Inversion of control, i.e. transformation into continuation-passing style (CPS)."
   #_(:require [cljs.analyzer :refer [resolve-var resolve-macro-var]]))
 
@@ -186,7 +186,7 @@
           ;; Activate trampoline by wrapping in a thunk
           (resolve-sequentially ctx tail
                                 (fn [args]
-                                  `(is.simm.lean-cps.runtime/->thunk (fn [] (~recur-target ~@args)))))
+                                  `(is.simm.partial-cps.runtime/->thunk (fn [] (~recur-target ~@args)))))
 
           :else (throw (ex-info "Can't recur outside loop" {:form form})))
 

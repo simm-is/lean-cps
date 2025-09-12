@@ -1,5 +1,5 @@
 {
-  "name": "lean-cps",
+  "name": "partial-cps",
   "version": "0.1.0",
   "description": "Lightweight CPS transformation library for Clojure/ClojureScript",
   "scripts": {

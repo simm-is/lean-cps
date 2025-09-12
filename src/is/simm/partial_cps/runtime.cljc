@@ -1,4 +1,4 @@
-(ns is.simm.lean-cps.runtime
+(ns is.simm.partial-cps.runtime
   (:refer-clojure :exclude [bound-fn]))
 
 (defn ^:no-doc bound-fn
