@@ -103,11 +103,11 @@
     ((async
       (let [results (loop [i 0
                            acc []]
-                      (if (< i 3)
-                        (let [value (await (async-cb-delay 10 i))]
+                      (if (< i 2000)
+                        (let [value (await (async i) #_(async-cb-delay 10 i))]
                           (recur (inc i) (conj acc value)))
                         acc))]
-        (is (= [0 1 2] results))))
+        (is (= (vec (range 2000)) results))))
      (fn [_v] (done))
      (fn [err] (is false (str "Unexpected error: " err)) (done)))))
 

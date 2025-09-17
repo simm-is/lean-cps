@@ -2,7 +2,7 @@
   (:refer-clojure :exclude [first rest sequence transduce into])
   (:require [clojure.test :refer [deftest testing is run-tests]]
             [is.simm.partial-cps.sequence :as seq]
-            [is.simm.partial-cps.async :refer [await async]]))
+            [is.simm.partial-cps.async :refer [await async *in-trampoline*]]))
 
 ;; Test helpers
 (defn future-delay
@@ -10,11 +10,12 @@
   [ms value]
   (fn [resolve reject]
     (future
-      (try
-        (Thread/sleep ms)
-        (resolve value)
-        (catch Exception e
-          (reject e))))))
+      (binding [*in-trampoline* false]
+        (try
+          (Thread/sleep ms)
+          (resolve value)
+          (catch Exception e
+            (reject e)))))))
 
 (defn blocking-test
   "Helper to run async test with blocking"

@@ -1,7 +1,8 @@
 (ns is.simm.partial-cps.async-test
   (:refer-clojure :exclude [await])
   (:require [clojure.test :refer [deftest testing is run-tests]]
-            [is.simm.partial-cps.async :refer [await async doseq-async dotimes-async]]))
+            [is.simm.partial-cps.runtime :as runtime]
+            [is.simm.partial-cps.async :refer [await async doseq-async dotimes-async *in-trampoline*]]))
 
 ;; Test helpers for Clojure (JVM)
 (defn future-delay
@@ -9,11 +10,12 @@
   [ms value]
   (fn [resolve reject]
     (future
-      (try
-        (Thread/sleep ms)
-        (resolve value)
-        (catch Exception e
-          (reject e))))))
+      (binding [*in-trampoline* false]
+        (try
+          (Thread/sleep ms)
+          (resolve value)
+          (catch Exception e
+            (reject e)))))))
 
 (defn failing-async
   "An async operation that always fails"

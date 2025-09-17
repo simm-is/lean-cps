@@ -20,19 +20,25 @@
   [async-cb]
   (throw (ex-info "await called outside of asynchronous scope" {:async-cb async-cb})))
 
+
+(def ^:dynamic *in-trampoline* false)
+
 (defn await-handler
   "Provides effect handler code for await."
   [env r e]
   (fn [args]
     (assert (= (count args) 1) (str "Expected 1 argument, got " args))
     `(letfn [(safe-r# [v#]
-               (try
-                 (loop [result# (~r v#)]
-                   (if (instance? is.simm.partial_cps.runtime.Thunk result#)
-                     ;; If continuation returns a thunk, trampoline it
-                     (recur ((.-f ^is.simm.partial_cps.runtime.Thunk result#)))
-                     result#))
-                 (catch ~(if (:js-globals env) :default `Throwable) t# (~e t#))))]
+                      (try
+                        (if *in-trampoline*
+                          (~r v#)
+                          (binding [*in-trampoline* true]
+                            (loop [result# (~r v#)]
+                              (if (instance? is.simm.partial_cps.runtime.Thunk result#)
+                                ;; If continuation returns a thunk, trampoline it
+                                (recur ((.-f ^is.simm.partial_cps.runtime.Thunk result#)))
+                                result#))))
+                        (catch ~(if (:js-globals env) :default `Throwable) t# (~e t#))))]
        (~(first args) safe-r# ~e))))
 
 (def ^:no-doc breakpoints
@@ -58,11 +64,14 @@
                         (throw e)))]
        `(fn [~r ~e]
           (try
-            (loop [result# ~(invert params expanded)]
-              (if (instance? is.simm.partial_cps.runtime.Thunk result#)
-                ;; If continuation returns a thunk, trampoline it
-                (recur ((.-f ^is.simm.partial_cps.runtime.Thunk result#)))
-                result#))
+            (if *in-trampoline*
+              ~(invert params expanded)
+              (binding [*in-trampoline* true]
+                (loop [result# ~(invert params expanded)]
+                  (if (instance? is.simm.partial_cps.runtime.Thunk result#)
+                    ;; If continuation returns a thunk, trampoline it
+                    (recur ((.-f ^is.simm.partial_cps.runtime.Thunk result#)))
+                    result#))))
             (catch ~(if (:js-globals &env) :default `Throwable) t# (~e t#)))))))
 
 ;; experimental macros
