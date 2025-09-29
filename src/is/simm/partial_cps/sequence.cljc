@@ -6,6 +6,11 @@
   (-afirst [this] "Returns async expression yielding first element")
   (-arest [this] "Returns async expression yielding rest of sequence"))
 
+(extend-type nil
+  IAsyncSeq
+  (-afirst [_] (async))
+  (-arest [_] (async)))
+
 (defn first
   "Returns async expression yielding first element"
   [async-seq]
